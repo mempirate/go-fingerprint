@@ -7,6 +7,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/bits"
 	"net"
 	"time"
 
@@ -20,6 +21,7 @@ type Interface struct {
 	iface   *net.Interface
 	ip      net.IP
 	netmask net.IPMask
+	prefix  uint8
 }
 
 var (
@@ -65,12 +67,11 @@ func GetInterface() (*Interface, error) {
 					iface:   i,
 					ip:      ip4,
 					netmask: ipnet.Mask,
+					prefix:  uint8(bits.OnesCount32(binary.BigEndian.Uint32(ipnet.Mask))),
 				}
 			}
 		}
 	}
-	fmt.Printf("IP Address: %s %T\n", scanner.ip, scanner.ip)
-	fmt.Printf("Network: %s, netmask: %s\n", scanner.ip.Mask(scanner.netmask), scanner.netmask)
 	return scanner, nil
 }
 
@@ -111,6 +112,10 @@ func ArpScan(scanner *Interface) error {
 		ComputeChecksums: true,
 	}
 
+	log.Printf("\n[*] Scanning on %s: %s [%s/%d]\n", scanner.iface.Name, scanner.ip, scanner.ip.Mask(scanner.netmask), scanner.prefix)
+	fmt.Println("=======================================")
+	fmt.Printf("%-20s %-20s\n", "IPv4", "MAC")
+
 	// Start sending ARP requests
 	for _, ip := range GetIPAddresses(scanner.ip, scanner.netmask) {
 		arp.DstProtAddress = []byte(ip)
@@ -146,7 +151,7 @@ func readARP(handle *pcap.Handle, iface *net.Interface, stop chan struct{}) {
 				continue
 			}
 
-			log.Printf("IP %v is at %v", net.IP(arp.SourceProtAddress), net.HardwareAddr(arp.SourceHwAddress))
+			fmt.Printf("%-20v %-20v\n", net.IP(arp.SourceProtAddress), net.HardwareAddr(arp.SourceHwAddress))
 		}
 	}
 }
