@@ -112,17 +112,16 @@ func ArpScan(scanner *Interface) error {
 	}
 
 	// Start sending ARP requests
-
-	for {
-		for _, ip := range GetIPAddresses(scanner.ip, scanner.netmask) {
-			arp.DstProtAddress = []byte(ip)
-			gopacket.SerializeLayers(buf, opts, &eth, &arp)
-			if err := handle.WritePacketData(buf.Bytes()); err != nil {
-				return err
-			}
+	for _, ip := range GetIPAddresses(scanner.ip, scanner.netmask) {
+		arp.DstProtAddress = []byte(ip)
+		gopacket.SerializeLayers(buf, opts, &eth, &arp)
+		if err := handle.WritePacketData(buf.Bytes()); err != nil {
+			return err
 		}
-		time.Sleep(time.Second * 10)
 	}
+
+	// Wait for ARP responses (tune this to network size)
+	time.Sleep(time.Second * 6)
 
 	return nil
 }
@@ -146,9 +145,7 @@ func readARP(handle *pcap.Handle, iface *net.Interface, stop chan struct{}) {
 				// This is a packet I sent.
 				continue
 			}
-			// Note:  we might get some packets here that aren't responses to ones we've sent,
-			// if for example someone else sends US an ARP request.  Doesn't much matter, though...
-			// all information is good information :)
+
 			log.Printf("IP %v is at %v", net.IP(arp.SourceProtAddress), net.HardwareAddr(arp.SourceHwAddress))
 		}
 	}
