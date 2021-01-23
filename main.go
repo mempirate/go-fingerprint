@@ -1,14 +1,18 @@
 package main
 
 import (
+	"bufio"
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
 	"flag"
 	"fmt"
 	"log"
 	"math/bits"
 	"net"
+	"os"
+	"strings"
 	"time"
 
 	"github.com/google/gopacket"
@@ -113,11 +117,11 @@ func ArpScan(scanner *Interface) error {
 	}
 
 	log.Printf("\n[*] Scanning on %s: %s [%s/%d]\n", scanner.iface.Name, scanner.ip, scanner.ip.Mask(scanner.netmask), scanner.prefix)
-	fmt.Println("=======================================")
-	fmt.Printf("%-20s %-20s\n", "IPv4", "MAC")
+	fmt.Println("===================================================================")
+	fmt.Printf("%-20s %-20s %-30s\n", "IPv4", "MAC", "Hardware")
 
 	// Start sending ARP requests
-	for _, ip := range GetIPAddresses(scanner.ip, scanner.netmask) {
+	for _, ip := range GetIPAddresses(&scanner.ip, &scanner.netmask) {
 		arp.DstProtAddress = []byte(ip)
 		gopacket.SerializeLayers(buf, opts, &eth, &arp)
 		if err := handle.WritePacketData(buf.Bytes()); err != nil {
@@ -126,7 +130,7 @@ func ArpScan(scanner *Interface) error {
 	}
 
 	// Wait for ARP responses (tune this to network size)
-	time.Sleep(time.Second * 6)
+	time.Sleep(time.Second * 3)
 
 	return nil
 }
@@ -151,15 +155,42 @@ func readARP(handle *pcap.Handle, iface *net.Interface, stop chan struct{}) {
 				continue
 			}
 
-			fmt.Printf("%-20v %-20v\n", net.IP(arp.SourceProtAddress), net.HardwareAddr(arp.SourceHwAddress))
+			go examineMAC(arp.SourceProtAddress, arp.SourceHwAddress)
 		}
 	}
 }
 
+func examineMAC(ip, mac []byte) {
+	oui := mac[:3]
+	f, err := os.Open("./mac-fab.txt")
+
+	if err != nil {
+		fmt.Println(err)
+	}
+	defer f.Close()
+
+	input := bufio.NewScanner(f)
+	for input.Scan() {
+		line := strings.Fields(input.Text())
+		macstr := line[0]
+		fab := strings.Join(line[1:], " ")
+		macbytes, err := hex.DecodeString(macstr)
+		if err != nil {
+			fmt.Println(err)
+		}
+
+		// fmt.Println(oui, macbytes)
+		if bytes.Compare(oui, macbytes) == 0 {
+			fmt.Printf("%-20v %-20v %-20s\n", net.IP(ip), net.HardwareAddr(mac), fab)
+		}
+	}
+
+}
+
 // GetIPAddresses returns all IP addresses on a subnet
-func GetIPAddresses(ip net.IP, mask net.IPMask) (out []net.IP) {
-	bip := binary.BigEndian.Uint32([]byte(ip))
-	bmask := binary.BigEndian.Uint32([]byte(mask))
+func GetIPAddresses(ip *net.IP, mask *net.IPMask) (out []net.IP) {
+	bip := binary.BigEndian.Uint32([]byte(*ip))
+	bmask := binary.BigEndian.Uint32([]byte(*mask))
 	bnet := bip & bmask
 	bbroadcast := bnet | ^bmask
 
