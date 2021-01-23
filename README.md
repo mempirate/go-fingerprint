@@ -11,3 +11,7 @@ get-oui && cat ieee-oui.txt | grep -v '#' | sort > mac-fab.txt && rm ieee-oui.tx
 Sources:
 * [IEEE OUI list](http://standards-oui.ieee.org/oui/oui.txt)
 * [arp-fingerprint](https://linux.die.net/man/1/arp-fingerprint)
+    * Basically fuzzes the target with different payloads to see what responses are generated.
+
+## Todo
+* [Makefile](https://kodfabrik.com/journal/a-good-makefile-for-go)

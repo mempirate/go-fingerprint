@@ -34,18 +34,19 @@ var (
 
 func main() {
 	flag.Parse()
-	scanner, err := GetInterface()
+	scanner, err := getInterface()
 	if err != nil {
 		log.Fatal(err)
 	}
-	err = ArpScan(scanner)
+	err = arpScan(scanner)
 	if err != nil {
 		log.Fatal(err)
 	}
 }
 
-// GetInterface fills
-func GetInterface() (*Interface, error) {
+/// Gets interface based on flag (or default ethernet)
+/// TODO: make this work on Windows
+func getInterface() (*Interface, error) {
 	i, err := net.InterfaceByName(*iface)
 
 	if err != nil {
@@ -79,8 +80,8 @@ func GetInterface() (*Interface, error) {
 	return scanner, nil
 }
 
-// ArpScan scans the network using the interface provided
-func ArpScan(scanner *Interface) error {
+// arpScan scans the network using the interface provided
+func arpScan(scanner *Interface) error {
 	handle, err := pcap.OpenLive(scanner.iface.Name, 1024, false, pcap.BlockForever)
 	if err != nil {
 		return err
@@ -121,7 +122,7 @@ func ArpScan(scanner *Interface) error {
 	fmt.Printf("%-20s %-20s %-30s\n", "IPv4", "MAC", "Hardware")
 
 	// Start sending ARP requests
-	for _, ip := range GetIPAddresses(&scanner.ip, &scanner.netmask) {
+	for _, ip := range getIPAddresses(&scanner.ip, &scanner.netmask) {
 		arp.DstProtAddress = []byte(ip)
 		gopacket.SerializeLayers(buf, opts, &eth, &arp)
 		if err := handle.WritePacketData(buf.Bytes()); err != nil {
@@ -179,7 +180,6 @@ func examineMAC(ip, mac []byte) {
 			fmt.Println(err)
 		}
 
-		// fmt.Println(oui, macbytes)
 		if bytes.Compare(oui, macbytes) == 0 {
 			fmt.Printf("%-20v %-20v %-20s\n", net.IP(ip), net.HardwareAddr(mac), fab)
 		}
@@ -187,8 +187,8 @@ func examineMAC(ip, mac []byte) {
 
 }
 
-// GetIPAddresses returns all IP addresses on a subnet
-func GetIPAddresses(ip *net.IP, mask *net.IPMask) (out []net.IP) {
+// getIPAddresses returns all IP addresses on a subnet
+func getIPAddresses(ip *net.IP, mask *net.IPMask) (out []net.IP) {
 	bip := binary.BigEndian.Uint32([]byte(*ip))
 	bmask := binary.BigEndian.Uint32([]byte(*mask))
 	bnet := bip & bmask
