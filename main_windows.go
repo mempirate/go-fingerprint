@@ -9,7 +9,6 @@ import (
 	"flag"
 	"fmt"
 	"log"
-	"math/bits"
 	"net"
 	"os"
 	"strings"
@@ -29,11 +28,12 @@ type Interface struct {
 }
 
 var (
-	iface = flag.String("i", "Ethernet", "Interface to listen on")
+	iface = flag.String("i", "wi-fi", "Interface to scan on")
 )
 
 func main() {
 	flag.Parse()
+
 	scanner, err := getInterface()
 	if err != nil {
 		log.Fatal(err)
@@ -44,39 +44,60 @@ func main() {
 	}
 }
 
-/// Gets interface based on flag (or default ethernet)
-/// TODO: make this work on Windows
+/// Gets interface based on flag (or default wi-fi)
 func getInterface() (*Interface, error) {
-	i, err := net.InterfaceByName(*iface)
-
-	if err != nil {
-		return nil, errors.New("Can't get interface " + *iface)
-	}
-
 	var scanner *Interface
-
-	// TODO: account for multiple ipv4s on 1 interface
-	addrs, err := i.Addrs()
+	var ip net.IP
+	var idx int
+	ifaces, err := net.Interfaces()
 
 	if err != nil {
-		return nil, errors.New("Problem getting interface addresses")
+		return nil, err
 	}
 
-	for _, a := range addrs {
-		if ipnet, ok := a.(*net.IPNet); ok {
-			if ip4 := ipnet.IP.To4(); ip4 != nil {
-				// TODO: error checking:
-				// * No loopback
-				// * No localhost
-				scanner = &Interface{
-					iface:   i,
-					ip:      ip4,
-					netmask: ipnet.Mask,
-					prefix:  uint8(bits.OnesCount32(binary.BigEndian.Uint32(ipnet.Mask))),
+	for _, ifs := range ifaces {
+		if strings.EqualFold(ifs.Name, *iface) {
+			idx = ifs.Index
+			if err != nil {
+				return nil, err
+			}
+
+			if !strings.Contains(ifs.Flags.String(), "up") {
+				return nil, errors.New("Interface is down: " + *iface)
+			}
+
+			addrs, err := ifs.Addrs()
+			if err != nil {
+				return nil, err
+			}
+
+			for _, a := range addrs {
+				if ipnet, ok := a.(*net.IPNet); ok {
+					if ip4 := ipnet.IP.To4(); ip4 != nil {
+						ip = ip4
+					}
+				}
+			}
+
+		}
+	}
+
+	i, err := net.InterfaceByIndex(idx)
+	scanner = &Interface{iface: i}
+
+	devs, err := pcap.FindAllDevs()
+	for _, dev := range devs {
+		for _, addr := range dev.Addresses {
+			if ip4 := addr.IP.To4(); ip4 != nil {
+				if bytes.Compare(ip, ip4) == 0 {
+					scanner.iface.Name = dev.Name
+					scanner.ip = ip4
+					scanner.netmask = addr.Netmask
 				}
 			}
 		}
 	}
+
 	return scanner, nil
 }
 
