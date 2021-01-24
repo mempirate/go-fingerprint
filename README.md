@@ -3,11 +3,18 @@
 Fingerprints devices on the network using crafted ARP requests and MAC OUIs.
 
 ## Installation
+Install with Go on Linux, Windows and Mac:
 `go get github.com/jonasbostoen/go-fingerprint`
+
 Make sure your GOPATH environment variable is set and GOPATH/bin is added to your path.
 
-**Linux dependencies**
+**Linux**
+Dependencies:
 * libpcap: `sudo apt-get install libpcap-dev`
+
+To avoid having to use `sudo`, give the binary the following capability:
+
+`sudo setcap CAP_NET_RAW+ep go-fingerprint`
 
 Sources:
 * [IEEE OUI list](http://standards-oui.ieee.org/oui/oui.txt)

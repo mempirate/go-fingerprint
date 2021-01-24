@@ -118,8 +118,8 @@ func arpScan(scanner *Interface) error {
 	}
 
 	log.Printf("\n[*] Scanning on %s: %s [%s/%d]\n", scanner.iface.Name, scanner.ip, scanner.ip.Mask(scanner.netmask), scanner.prefix)
-	fmt.Println("===================================================================")
 	fmt.Printf("%-20s %-20s %-30s\n", "IPv4", "MAC", "Hardware")
+	fmt.Println("===================================================================")
 
 	// Start sending ARP requests
 	for _, ip := range getIPAddresses(&scanner.ip, &scanner.netmask) {

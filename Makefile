@@ -12,8 +12,6 @@ build: mac-fab.txt
 	GOOS=windows GOARCH=amd64 go build -o bin/go-fingerprint.exe
 	sudo setcap CAP_NET_RAW+ep bin/go-fingerprint
 
-install:
-
 clean:	
 	rm -rf ./bin
 	go clean
