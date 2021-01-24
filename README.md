@@ -15,3 +15,5 @@ Sources:
 
 ## Todo
 * [Makefile](https://kodfabrik.com/journal/a-good-makefile-for-go)
+* [Build constraints](https://www.digitalocean.com/community/tutorials/customizing-go-binaries-with-build-tags)
+* [Conditional compilation](https://dave.cheney.net/2013/10/12/how-to-use-conditional-compilation-with-the-go-build-tool)
