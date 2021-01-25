@@ -9,8 +9,10 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"math/bits"
 	"net"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -93,6 +95,7 @@ func getInterface() (*Interface, error) {
 					scanner.iface.Name = dev.Name
 					scanner.ip = ip4
 					scanner.netmask = addr.Netmask
+					scanner.prefix = uint8(bits.OnesCount32(binary.BigEndian.Uint32(addr.Netmask)))
 				}
 			}
 		}
@@ -183,11 +186,14 @@ func readARP(handle *pcap.Handle, iface *net.Interface, stop chan struct{}) {
 }
 
 func examineMAC(ip, mac []byte) {
+	var fabmatch string
+
 	oui := mac[:3]
-	f, err := os.Open("./mac-fab.txt")
+	gopath := os.Getenv("GOPATH")
+	f, err := os.Open(path.Join(gopath, "src\\github.com\\jonasbostoen\\go-fingerprint\\mac-fab.txt"))
 
 	if err != nil {
-		fmt.Println(err)
+		f, err = os.Open("mac-fab.txt")
 	}
 	defer f.Close()
 
@@ -202,9 +208,10 @@ func examineMAC(ip, mac []byte) {
 		}
 
 		if bytes.Compare(oui, macbytes) == 0 {
-			fmt.Printf("%-20v %-20v %-20s\n", net.IP(ip), net.HardwareAddr(mac), fab)
+			fabmatch = fab
 		}
 	}
+	fmt.Printf("%-20v %-20v %-20s\n", net.IP(ip), net.HardwareAddr(mac), fabmatch)
 
 }
 

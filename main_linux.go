@@ -12,6 +12,7 @@ import (
 	"math/bits"
 	"net"
 	"os"
+	"path"
 	"strings"
 	"time"
 
@@ -45,7 +46,6 @@ func main() {
 }
 
 /// Gets interface based on flag (or default ethernet)
-/// TODO: make this work on Windows
 func getInterface() (*Interface, error) {
 	i, err := net.InterfaceByName(*iface)
 
@@ -65,9 +65,6 @@ func getInterface() (*Interface, error) {
 	for _, a := range addrs {
 		if ipnet, ok := a.(*net.IPNet); ok {
 			if ip4 := ipnet.IP.To4(); ip4 != nil {
-				// TODO: error checking:
-				// * No loopback
-				// * No localhost
 				scanner = &Interface{
 					iface:   i,
 					ip:      ip4,
@@ -162,12 +159,16 @@ func readARP(handle *pcap.Handle, iface *net.Interface, stop chan struct{}) {
 }
 
 func examineMAC(ip, mac []byte) {
+	var fabmatch string
+
 	oui := mac[:3]
-	f, err := os.Open("./mac-fab.txt")
+	gopath := os.Getenv("GOPATH")
+	f, err := os.Open(path.Join(gopath, "src\\github.com\\jonasbostoen\\go-fingerprint\\mac-fab.txt"))
 
 	if err != nil {
-		fmt.Println(err)
+		f, err = os.Open("mac-fab.txt")
 	}
+
 	defer f.Close()
 
 	input := bufio.NewScanner(f)
@@ -181,9 +182,10 @@ func examineMAC(ip, mac []byte) {
 		}
 
 		if bytes.Compare(oui, macbytes) == 0 {
-			fmt.Printf("%-20v %-20v %-20s\n", net.IP(ip), net.HardwareAddr(mac), fab)
+			fabmatch = fab
 		}
 	}
+	fmt.Printf("%-20v %-20v %-20s\n", net.IP(ip), net.HardwareAddr(mac), fabmatch)
 
 }
 
