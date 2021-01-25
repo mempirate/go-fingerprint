@@ -7,6 +7,7 @@ update:
 install:
 	@echo "[+] Installing..."
 	go install
+	# CAP_NET_RAW is needed to create and send packets
 	sudo setcap CAP_NET_RAW+ep ${BINPATH}/bin/go-fingerprint
 
 clean:	

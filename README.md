@@ -32,24 +32,40 @@ IPv4                 MAC                  Hardware
 
 
 ## Installation
-Install with Go on Linux, Windows and Mac:
-`go get github.com/jonasbostoen/go-fingerprint`
-
 Make sure your GOPATH environment variable is set and GOPATH/bin is added to your path.
-The program assumes `mac-fab.txt` is at `$GOPATH/src/github.com/jonasbostoen/go-fingerprint`
 
-**Linux**
-Dependencies:
+**Linux & MacOS**
+
+Dependencies on Linux:
 * libpcap: `sudo apt-get install libpcap-dev`
 
-To avoid having to use `sudo`, give the binary the following capability:
+Go get:
+```
+$ go get github.com/jonasbostoen/go-fingerprint
+$ cd $GOPATH/src/github.com/jonasbostoen/go-fingerprint
+$ make all
+```
 
-`sudo setcap CAP_NET_RAW+ep go-fingerprint`
+From source:
+```
+$ git clone https://github.com/jonasbostoen/go-fingerprint
+$ cd go-fingerprint
+$ make all
+```
 
-Sources:
+**Windows**
+
+Go get:
+```
+PS C:\> go get github.com/jonasbostoen/go-fingerprint
+```
+
+## Todo
+* Hardcode common OUIs
+* Custom fingerprinting 
+
+## Sources:
 * [IEEE OUI list](http://standards-oui.ieee.org/oui/oui.txt)
 * [arp-fingerprint](https://linux.die.net/man/1/arp-fingerprint)
     * Basically fuzzes the target with different payloads to see what responses are generated.
 
-## Todo
-* Hardcode common OUIs

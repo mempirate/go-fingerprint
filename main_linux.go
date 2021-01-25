@@ -12,8 +12,6 @@ import (
 	"math/bits"
 	"net"
 	"os"
-	// "path"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -163,16 +161,11 @@ func examineMAC(ip, mac []byte) {
 	var fabmatch string
 
 	oui := mac[:3]
-	// gopath := os.Getenv("GOPATH")
-	// f, err := os.Open(path.Join(gopath, "src/github.com/jonasbostoen/go-fingerprint/mac-fab.txt"))
 
-	// if err != nil {
-		f, err := os.Open("mac-fab.txt")
-		fmt.Println(filepath.Abs(filepath.Dir(f.Name())))
-		if err != nil {
-			fmt.Println("Can't find mac-fab.txt, continuing without fingerprinting")
-		}
-	// }
+	f, err := os.Open("mac-fab.txt")
+	if err != nil {
+		fmt.Println("Can't find mac-fab.txt, continuing without fingerprinting")
+	}
 
 	defer f.Close()
 
