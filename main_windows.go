@@ -36,19 +36,16 @@ var (
 func main() {
 	flag.Parse()
 
-	scanner, err := getInterface()
-	if err != nil {
+	if scanner, err := getInterface(); err != nil {
 		log.Fatal(err)
-	}
-	err = arpScan(scanner)
-	if err != nil {
+	} else if err = arpScan(scanner); err != nil {
 		log.Fatal(err)
 	}
 }
 
 /// Gets interface based on flag (or default wi-fi)
 func getInterface() (*Interface, error) {
-	var scanner *Interface
+	var scanner Interface
 	var ip net.IP
 	var idx int
 	ifaces, err := net.Interfaces()
@@ -85,7 +82,7 @@ func getInterface() (*Interface, error) {
 	}
 
 	i, err := net.InterfaceByIndex(idx)
-	scanner = &Interface{iface: i}
+	scanner = Interface{iface: i}
 
 	devs, err := pcap.FindAllDevs()
 	for _, dev := range devs {
@@ -101,7 +98,7 @@ func getInterface() (*Interface, error) {
 		}
 	}
 
-	return scanner, nil
+	return &scanner, nil
 }
 
 // arpScan scans the network using the interface provided

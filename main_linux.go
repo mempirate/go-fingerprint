@@ -34,12 +34,10 @@ var (
 
 func main() {
 	flag.Parse()
-	scanner, err := getInterface()
-	if err != nil {
+
+	if scanner, err := getInterface(); err != nil {
 		log.Fatal(err)
-	}
-	err = arpScan(scanner)
-	if err != nil {
+	} else if err = arpScan(scanner); err != nil {
 		log.Fatal(err)
 	}
 }
@@ -52,7 +50,7 @@ func getInterface() (*Interface, error) {
 		return nil, errors.New("Can't get interface " + *iface)
 	}
 
-	var scanner *Interface
+	var scanner Interface
 
 	// TODO: account for multiple ipv4s on 1 interface
 	addrs, err := i.Addrs()
@@ -64,7 +62,7 @@ func getInterface() (*Interface, error) {
 	for _, a := range addrs {
 		if ipnet, ok := a.(*net.IPNet); ok {
 			if ip4 := ipnet.IP.To4(); ip4 != nil {
-				scanner = &Interface{
+				scanner = Interface{
 					iface:   i,
 					ip:      ip4,
 					netmask: ipnet.Mask,
@@ -73,7 +71,7 @@ func getInterface() (*Interface, error) {
 			}
 		}
 	}
-	return scanner, nil
+	return &scanner, nil
 }
 
 // arpScan scans the network using the interface provided

@@ -63,6 +63,9 @@ PS C:\> go get github.com/jonasbostoen/go-fingerprint
 ## Todo
 * Hardcode common OUIs
 * Custom fingerprinting 
+* Performance
+    * https://segment.com/blog/allocation-efficiency-in-high-performance-go-services/
+    * https://blog.golang.org/pprof
 
 ## Sources:
 * [IEEE OUI list](http://standards-oui.ieee.org/oui/oui.txt)
